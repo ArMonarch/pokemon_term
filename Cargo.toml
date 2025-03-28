@@ -1,0 +1,34 @@
+[package]
+name = "pokemon-term"
+description = """ 
+pokemon-term is an cli application that prints pokemon sprites on in the terminal
+"""
+
+version = "0.1.0"
+authors = ["Ar_Monarch <praffulthapa11@gmail.com"]
+keywords = ["pokemon", "pokemon-term", "cli"]
+readme = "README.md"
+license = "MIT"
+build = "build.rs"
+edition = "2024"
+
+[[bin]]
+name = "pokemon-term"
+path = "crates/cli/src/main.rs"
+
+[[test]]
+name = "integration"
+path = "tests/test.rs"
+
+[[bench]]
+name = "bench"
+path = "bench/bench.rs"
+
+[workspace]
+members = ["crates/cli"]
+
+[dependencies]
+anyhow = "1.0.97"
+lexopt = "0.3.0"
+log = "0.4.27"
+serde_json = "1.0.140"
