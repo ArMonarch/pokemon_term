@@ -3,10 +3,9 @@ pub struct Args {
     // Essential Arguments.
     pub special: SpecialMode,
     pub mode: Mode,
-    pub positional: bool,
+    pub positional: Vec<String>,
     // Everything Else, Sorted lexicographically.
-    pub pokemon_name: bool,
-    pub list: bool,
+    pub pokemon_name: String,
 }
 
 /// The overall mode that pokemon-term should operate in.

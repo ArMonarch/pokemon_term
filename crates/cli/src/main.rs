@@ -29,14 +29,42 @@ fn run(args: parse::ParseResult<args::Args>) -> anyhow::Result<ExitCode> {
         ParseResult::Special(mode) => return special(mode),
     };
 
-    match args.mode {
-        Mode::Regular => {}
-        Mode::Random => {}
-    }
-
-    anyhow::bail!("Not Implemented")
+    return match args.mode {
+        Mode::List => list_pokemons(args),
+        Mode::Regular => print_pokemon(args),
+        Mode::Random => print_random_pokemon(args),
+        Mode::RandomByNames => print_random_pokemon_by_name(args),
+    };
 }
 
-fn special(_mode: args::SpecialMode) -> anyhow::Result<ExitCode> {
-    unimplemented!()
+/// Implements pokemon-term's "special" modes.
+///
+/// A special mode is one that generally short-circuits most of the pokemon-term's logic and skips
+/// right to this routine. The special mode essentially consists of printing help and version
+/// output. The idea behind the short circuiting is to ensure there is as little as possible overhead for emiting help/version output.
+fn special(_mode: crate::args::SpecialMode) -> anyhow::Result<ExitCode> {
+    unimplemented!("Not Implemented")
+}
+
+/// Top level entry point for listing all pokemons
+///
+/// This function parse the assets/pokemons.json to get the list of available pokemons available and prints
+/// the list to the terminal.
+fn list_pokemons(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
+    unimplemented!("Not Implemented")
+}
+
+/// Top level entry point for printing pokemon to the terminal
+fn print_pokemon(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
+    unimplemented!("Not Implemented")
+}
+
+/// Top level entry point for printing a random pokemon to the terminal
+fn print_random_pokemon(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
+    unimplemented!("Not Implemented")
+}
+
+/// Top level entry point for printing random pokemon from the list of given pokemons to terminal
+fn print_random_pokemon_by_name(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
+    unimplemented!("Not Implemented")
 }

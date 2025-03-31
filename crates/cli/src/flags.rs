@@ -69,6 +69,38 @@ impl<T> FlagValue<T> {
     }
 }
 
+/// The kind of flag that is beign matched
+#[derive(Debug)]
+pub(crate) enum FlagInfoKind {
+    /// A standard flag, e.g., --name
+    Standard,
+
+    /// A negation of a standard flag, e.g., ...
+    Negated,
+
+    /// A alias for standard flag, e.g.,
+    Alias,
+}
+
+/// The flag name that represents a flag in `FLAGS`.
+#[derive(Debug)]
+pub(crate) enum FlagName {
+    Char(char),
+    String(&'static str),
+}
+
+#[derive(Debug)]
+pub(crate) struct FlagMap {
+    map: std::collections::HashMap<u8, usize>,
+}
+
+#[derive(Debug)]
+pub(crate) struct FlagInfo {
+    flag: &'static dyn Flag,
+    name: FlagName,
+    kind: FlagInfoKind,
+}
+
 /// A list of all flags in pokemon-term via implementations of `Flag`.
 ///
 /// The order of these flags matter. It determines the order of the flags in
@@ -84,7 +116,7 @@ const FLAGS: &[&dyn Flag] = &[];
 /// `--no-encoding` negation flag for reverting back to "automatic" encoding
 /// detection. All three of `-E`, `--encoding` and `--no-encoding` are provided
 /// by a single implementation of this trait.
-trait Flag: Debug {
+trait Flag: Debug + Send + Sync + 'static {
     /// Returns true if this flag is a switch. When a flag is a switch, the
     /// CLI parser will not look for a value after the flag is seen.
     fn is_switch(&self) -> bool;
@@ -168,5 +200,8 @@ use crate::args::Args;
 use crate::parse::ParseResult;
 
 pub fn parse() -> ParseResult<Args> {
-    unimplemented!();
+    let parser = crate::parse::Parser::new();
+
+    let err = anyhow::anyhow!("Not Implemented");
+    ParseResult::Err(err)
 }
