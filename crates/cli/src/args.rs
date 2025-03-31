@@ -1,11 +1,22 @@
 #[derive(Debug)]
 pub struct Args {
     // Essential Arguments.
-    pub special: SpecialMode,
+    pub special: Option<SpecialMode>,
     pub mode: Mode,
     pub positional: Vec<String>,
     // Everything Else, Sorted lexicographically.
     pub pokemon_name: String,
+}
+
+impl Args {
+    pub fn new() -> Args {
+        Args {
+            special: None,
+            mode: Mode::Regular,
+            positional: Vec::new(),
+            pokemon_name: String::new(),
+        }
+    }
 }
 
 /// The overall mode that pokemon-term should operate in.
