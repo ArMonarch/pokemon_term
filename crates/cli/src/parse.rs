@@ -1,3 +1,6 @@
+use anyhow::Context;
+use std::ffi::OsString;
+
 use crate::args;
 
 /// The result of parsing CLI arguments.
@@ -26,7 +29,7 @@ pub(crate) struct Parser {
     map: crate::flags::FlagMap,
 
     /// A map from IDs returned by the `map` to the corresponding flag information.
-    info: crate::flags::FlagInfo,
+    info: Vec<crate::flags::FlagInfo>,
 }
 
 impl Parser {
@@ -34,19 +37,73 @@ impl Parser {
     ///
     /// This always creates the same Parser and only does it once. Callers may call this
     /// repeatedly, and the parser will only be build once.
-    pub fn new() -> Parser {
+    pub fn new() -> &'static Parser {
         use std::sync::OnceLock;
+
+        use crate::flags::FLAGS;
+        use crate::flags::FlagMap;
+        use crate::flags::{FlagInfo, FlagInfoKind};
 
         /// Since a parser's state is immutable and completely determined by FLAGS, and since FLAGS
         /// is a constant, we can initialize it exactly once.
         static P: OnceLock<Parser> = OnceLock::new();
 
-        unimplemented!()
+        P.get_or_init(|| {
+            let mut info = Vec::new();
+
+            for &flag in FLAGS.iter() {
+                // Insert the flag given long name.
+
+                info.push(FlagInfo {
+                    flag,
+                    name: Ok(flag.name_long()),
+                    kind: FlagInfoKind::Standard,
+                });
+
+                // Insert the flag short name is not None.
+                if let Some(byte) = flag.name_short() {
+                    info.push(FlagInfo {
+                        flag,
+                        name: Err(byte),
+                        kind: FlagInfoKind::Standard,
+                    });
+                }
+
+                // Insert the flag negated name if not None.
+                if let Some(name) = flag.name_negated() {
+                    info.push(FlagInfo {
+                        flag,
+                        name: Ok(name),
+                        kind: FlagInfoKind::Negated,
+                    })
+                }
+            }
+
+            let map = FlagMap::new(&info);
+            Parser { map, info }
+        })
     }
 
-    fn parse() -> anyhow::Result<()> {
-        let err = anyhow::anyhow!("Not Implemented");
+    pub fn parse<I, O>(&self, rawargs: I, args: &mut crate::args::Args) -> anyhow::Result<()>
+    where
+        I: IntoIterator<Item = O>,
+        O: Into<OsString>,
+    {
+        let mut p = lexopt::Parser::from_args(rawargs);
 
-        Err(err)
+        while let Some(arg) = p.next().context("invalid CLI arguments")? {
+            let _lookup = match arg {
+                lexopt::Arg::Value(val) => match val.into_string() {
+                    Ok(str) => args.positional.push(str),
+                    Err(os_str) => {
+                        anyhow::bail!("failed to convert OsString: {:?} to String", os_str)
+                    }
+                },
+                lexopt::Arg::Short(_) => {}
+                lexopt::Arg::Long(_) => {}
+            };
+        }
+
+        unimplemented!()
     }
 }
