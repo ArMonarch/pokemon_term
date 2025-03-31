@@ -82,23 +82,54 @@ pub(crate) enum FlagInfoKind {
     Alias,
 }
 
-/// The flag name that represents a flag in `FLAGS`.
-#[derive(Debug)]
-pub(crate) enum FlagName {
-    Char(char),
-    String(&'static str),
-}
-
-#[derive(Debug)]
-pub(crate) struct FlagMap {
-    map: std::collections::HashMap<u8, usize>,
-}
-
+/// The info about a flag associated with a flag's ID in the flag map.
 #[derive(Debug)]
 pub(crate) struct FlagInfo {
-    flag: &'static dyn Flag,
-    name: FlagName,
-    kind: FlagInfoKind,
+    /// The flag object and its associated metadata.
+    pub flag: &'static dyn Flag,
+    /// The actual name stored in the `FlagMap`.
+    pub name: Result<&'static str, u8>,
+    /// The type of flag that is stored for the corrsponding pattern.
+    pub kind: FlagInfoKind,
+}
+
+/// A map from flag name (short, long, negated and aliases) to their ID.
+///
+/// Once an ID is known, it can be used to look up a flag's metadata in the parser's internal
+/// state.
+#[derive(Debug)]
+pub(crate) struct FlagMap {
+    map: std::collections::HashMap<Vec<u8>, usize>,
+}
+
+impl FlagMap {
+    /// Create a new map of flags for the given flag information.
+    ///
+    /// The index of each flag info corresponds to its ID.
+    pub fn new(infos: &[FlagInfo]) -> FlagMap {
+        let mut map = std::collections::HashMap::new();
+
+        for (index, flag) in infos.iter().enumerate() {
+            match flag.name {
+                Ok(str) => {
+                    assert_eq!(None, map.insert(str.as_bytes().to_vec(), index))
+                }
+                Err(byte) => {
+                    assert_eq!(None, map.insert(vec![byte], index))
+                }
+            }
+        }
+
+        FlagMap { map }
+    }
+
+    /// look for a match of `name` in the `Flagmap`.
+    ///
+    /// This only returns a match if the one found has a length equivalent to the length of the
+    /// name given.
+    pub fn find(&self, key: &[u8]) -> Option<usize> {
+        self.map.get(key).copied()
+    }
 }
 
 /// A list of all flags in pokemon-term via implementations of `Flag`.
@@ -106,7 +137,7 @@ pub(crate) struct FlagInfo {
 /// The order of these flags matter. It determines the order of the flags in
 /// the generated documentation (`-h`, `--help` and the man page) within each
 /// category. (This is why the deprecated flags are last.)
-const FLAGS: &[&dyn Flag] = &[];
+pub(crate) const FLAGS: &[&dyn Flag] = &[];
 
 /// A trait that encapsulates the definition of an optional flag for pokemon-term
 ///
@@ -116,7 +147,7 @@ const FLAGS: &[&dyn Flag] = &[];
 /// `--no-encoding` negation flag for reverting back to "automatic" encoding
 /// detection. All three of `-E`, `--encoding` and `--no-encoding` are provided
 /// by a single implementation of this trait.
-trait Flag: Debug + Send + Sync + 'static {
+pub(crate) trait Flag: Debug + Send + Sync + 'static {
     /// Returns true if this flag is a switch. When a flag is a switch, the
     /// CLI parser will not look for a value after the flag is seen.
     fn is_switch(&self) -> bool;
@@ -201,6 +232,11 @@ use crate::parse::ParseResult;
 
 pub fn parse() -> ParseResult<Args> {
     let parser = crate::parse::Parser::new();
+    let mut args = crate::args::Args::new();
+
+    if let Err(err) = parser.parse(std::env::args().skip(1), &mut args) {
+        return ParseResult::Err(err);
+    }
 
     let err = anyhow::anyhow!("Not Implemented");
     ParseResult::Err(err)
