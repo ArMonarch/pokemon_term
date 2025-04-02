@@ -238,6 +238,11 @@ pub fn parse() -> ParseResult<Args> {
         return ParseResult::Err(err);
     }
 
-    let err = anyhow::anyhow!("Not Implemented");
-    ParseResult::Err(err)
+    // We can bail early, if a special mode was enabled. This is basically only for version and
+    // help output which shouldn't be impacted by what is done next.
+    if let Some(special_mode) = args.special {
+        return ParseResult::Special(special_mode);
+    }
+
+    ParseResult::Ok(args)
 }
