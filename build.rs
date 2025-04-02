@@ -17,5 +17,5 @@ fn set_git_hash() {
         return;
     }
 
-    println!("cargo:rustc-env=POEKMON_TERM_BUILD_GIT_HASH={}", str);
+    println!("cargo:rustc-env=POKEMON_TERM_BUILD_GIT_HASH={}", str);
 }

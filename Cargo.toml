@@ -5,7 +5,7 @@ pokemon-term is an cli application that prints pokemon sprites on in the termina
 """
 
 version = "0.1.0"
-authors = ["Ar_Monarch <praffulthapa11@gmail.com"]
+authors = ["Ar_Monarch <praffulthapa11@gmail.com>"]
 keywords = ["pokemon", "pokemon-term", "cli"]
 readme = "README.md"
 license = "MIT"

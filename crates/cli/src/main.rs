@@ -6,6 +6,9 @@ mod args;
 mod flags;
 mod parse;
 
+mod help;
+mod version;
+
 fn main() -> ExitCode {
     let args = flags::parse();
 
@@ -42,8 +45,25 @@ fn run(args: parse::ParseResult<args::Args>) -> anyhow::Result<ExitCode> {
 /// A special mode is one that generally short-circuits most of the pokemon-term's logic and skips
 /// right to this routine. The special mode essentially consists of printing help and version
 /// output. The idea behind the short circuiting is to ensure there is as little as possible overhead for emiting help/version output.
-fn special(_mode: crate::args::SpecialMode) -> anyhow::Result<ExitCode> {
-    unimplemented!("Not Implemented")
+fn special(mode: crate::args::SpecialMode) -> anyhow::Result<ExitCode> {
+    use std::io::Write;
+
+    use crate::args::SpecialMode::{HelpLong, HelpShort, VersionLong, VersionShort};
+
+    use help::{help_long, help_short};
+    use version::{version_long, version_short};
+
+    let exit = ExitCode::from(0);
+    let output = match mode {
+        HelpShort => help_short(),
+        HelpLong => help_long(),
+        VersionShort => version_short(),
+        VersionLong => version_long(),
+    };
+
+    writeln!(std::io::stdout(), "{}", output)?;
+
+    Ok(exit)
 }
 
 /// Top level entry point for listing all pokemons
