@@ -36,6 +36,24 @@ pub enum Mode {
     RandomByNames,
 }
 
+impl Mode {
+    /// Update this mode to the new mode while implementing various overrides semantics. For
+    /// example, Regular mode cannot replace non-Reguler mode.
+    pub fn update(&mut self, new: Mode) {
+        match self {
+            // If we are in regular mode any mode can override it.
+            Mode::Regular => {
+                *self = new;
+            }
+            _ => {
+                // Once we are in non-Reguler mode, other non-Reguler mode can override it. But
+                // Regular mode cannot.
+                eprintln!("found argument `` which wasn't expected, or isn't valid for this contex")
+            }
+        }
+    }
+}
+
 /// A "special" mode that supercedes everything else.
 ///
 /// When one of these mode is present, it overrides everything else and causes pokemon-term to
