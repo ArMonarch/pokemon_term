@@ -1,6 +1,5 @@
 use std::ffi::OsString;
 use std::fmt::Debug;
-use std::process::ExitCode;
 
 /// Represents a value parsed from the command line.
 ///
@@ -8,7 +7,7 @@ use std::process::ExitCode;
 /// 1. A switch (on or off),
 /// 2. an arbitary value,
 /// 3. Vec of arbitary value,
-enum FlagValue<T> {
+pub enum FlagValue<T> {
     /// A flag that is either on or off.
     Switch(bool),
     /// A flag that comes with an arbitrary user value.
@@ -70,7 +69,7 @@ impl<T> FlagValue<T> {
 }
 
 /// The kind of flag that is beign matched
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(crate) enum FlagInfoKind {
     /// A standard flag, e.g., --name
     Standard,
@@ -132,12 +131,22 @@ impl FlagMap {
     }
 }
 
+///  The result of looking up a flag name
+#[derive(Debug)]
+pub enum FlagLookup<'a> {
+    Match(&'a FlagInfo),
+    /// The given short name is unrecognized.
+    UnrecognizedShort(char),
+    /// The given long name is unrecognized.
+    UnrecognizedLong(String),
+}
+
 /// A list of all flags in pokemon-term via implementations of `Flag`.
 ///
 /// The order of these flags matter. It determines the order of the flags in
 /// the generated documentation (`-h`, `--help` and the man page) within each
 /// category. (This is why the deprecated flags are last.)
-pub(crate) const FLAGS: &[&dyn Flag] = &[];
+pub(crate) const FLAGS: &[&dyn Flag] = &[&List];
 
 /// A trait that encapsulates the definition of an optional flag for pokemon-term
 ///
@@ -156,10 +165,6 @@ pub(crate) trait Flag: Debug + Send + Sync + 'static {
     /// CLI parser will look for multiple value after the flag is seen.
     fn is_multivalued(&self) -> bool;
 
-    fn name_negated(&self) -> Option<&'static str> {
-        None
-    }
-
     /// A short single byte name for this flag. This return `None` by defult, which signifies that
     /// the flag has no short name.
     ///
@@ -172,6 +177,11 @@ pub(crate) trait Flag: Debug + Send + Sync + 'static {
     ///
     /// the long name must be at least 2 bytes and all of its bytes must be ASCII characters.
     fn name_long(&self) -> &'static str;
+
+    /// ...
+    fn name_negated(&self) -> Option<&'static str> {
+        None
+    }
 
     /// Returns the variable name describing the type of value this flag accepts. This should
     /// always be set for non-switch flags and never set for switch flags.
@@ -200,11 +210,7 @@ pub(crate) trait Flag: Debug + Send + Sync + 'static {
     ///
     /// The `-V | --version` and `-h | --help` flags are treated as special in the parser and
     /// should nothing here.
-    fn update(
-        &self,
-        val: FlagValue<OsString>,
-        args: &mut crate::args::Args,
-    ) -> anyhow::Result<ExitCode>;
+    fn update(&self, val: FlagValue<OsString>, args: &mut crate::args::Args) -> anyhow::Result<()>;
 }
 
 /// -n | --name
@@ -214,6 +220,49 @@ struct Name;
 /// -l | --list
 #[derive(Debug)]
 struct List;
+
+impl Flag for List {
+    fn is_switch(&self) -> bool {
+        true
+    }
+
+    fn is_multivalued(&self) -> bool {
+        false
+    }
+
+    fn name_short(&self) -> Option<u8> {
+        Some(b'l')
+    }
+
+    fn name_long(&self) -> &'static str {
+        "list"
+    }
+
+    fn name_negated(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn doc_variable(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn doc_short(&self) -> &'static str {
+        "Print a list of all pokemons"
+    }
+
+    fn doc_long(&self) -> &'static str {
+        ""
+    }
+
+    fn update(&self, val: FlagValue<OsString>, args: &mut crate::args::Args) -> anyhow::Result<()> {
+        use crate::args::Mode;
+
+        assert!(val.unwrap_switch());
+
+        args.mode.update(Mode::List);
+        Ok(())
+    }
+}
 
 /// -r | --random
 #[derive(Debug)]

@@ -1,7 +1,10 @@
 use anyhow::Context;
 use std::ffi::OsString;
 
-use crate::args;
+use crate::{
+    args,
+    flags::{FlagInfo, FlagLookup},
+};
 
 /// The result of parsing CLI arguments.
 ///
@@ -89,21 +92,103 @@ impl Parser {
         I: IntoIterator<Item = O>,
         O: Into<OsString>,
     {
+        use crate::flags::FlagInfoKind;
+        use crate::flags::FlagLookup;
+        use crate::flags::FlagValue;
+
         let mut p = lexopt::Parser::from_args(rawargs);
 
         while let Some(arg) = p.next().context("invalid CLI arguments")? {
-            let _lookup = match arg {
-                lexopt::Arg::Value(val) => match val.into_string() {
-                    Ok(str) => args.positional.push(str),
-                    Err(os_str) => {
-                        anyhow::bail!("failed to convert OsString: {:?} to String", os_str)
-                    }
-                },
-                lexopt::Arg::Short(_) => {}
-                lexopt::Arg::Long(_) => {}
+            let lookup = match arg {
+                lexopt::Arg::Value(val) => {
+                    match val.into_string() {
+                        Ok(str) => args.positional.push(str),
+                        Err(os_str) => {
+                            anyhow::bail!("failed to convert OsString: {:?} to String", os_str)
+                        }
+                    };
+                    continue;
+                }
+
+                lexopt::Arg::Short(x) if x == 'h' => {
+                    // Special case -h | --help, since behavior is different based on wheather
+                    // short or long flag is given.
+                    args.special = Some(args::SpecialMode::HelpShort);
+                    continue;
+                }
+
+                lexopt::Arg::Short(x) if x == 'v' => {
+                    // Special case -v | --version, since behavior is different based on wheather
+                    // short or long flag is given.
+                    args.special = Some(args::SpecialMode::VersionShort);
+                    continue;
+                }
+
+                lexopt::Arg::Short(x) => self.find_short(x),
+
+                lexopt::Arg::Long(str) if str == "help" => {
+                    // Special case -h | --help, since behavior is different based on wheather
+                    // short or long flag is given.
+                    args.special = Some(args::SpecialMode::HelpLong);
+                    continue;
+                }
+
+                lexopt::Arg::Long(str) if str == "version" => {
+                    // Special case -v | --version, since behavior is different based on wheather
+                    // short or long flag is given.
+                    args.special = Some(args::SpecialMode::VersionLong);
+                    continue;
+                }
+
+                lexopt::Arg::Long(str) => self.find_long(str),
             };
+
+            let mat = match lookup {
+                FlagLookup::UnrecognizedShort(ch) => anyhow::bail!("unrecognized flag -{ch}"),
+                FlagLookup::UnrecognizedLong(str) => anyhow::bail!("unrecognized flag --{str}"),
+                FlagLookup::Match(mat) => mat,
+            };
+
+            let val = if mat.kind == FlagInfoKind::Negated {
+                FlagValue::Switch(false)
+            } else if mat.flag.is_switch() {
+                FlagValue::Switch(true)
+            } else {
+                FlagValue::Value(
+                    p.value()
+                        .with_context(|| format!("missing value for flag {:?}", mat))?,
+                )
+            };
+
+            mat.flag
+                .update(val, args)
+                .with_context(|| format!("error parsing flag {:?}", mat))?;
         }
 
-        unimplemented!()
+        Ok(())
+    }
+
+    /// Look for a flag by its short name.
+    fn find_short(&self, ch: char) -> crate::flags::FlagLookup<'_> {
+        use crate::flags::FlagLookup;
+
+        if !ch.is_ascii() {
+            return FlagLookup::UnrecognizedShort(ch);
+        }
+
+        let byte = u8::try_from(ch).unwrap();
+        let Some(index) = self.map.find(&[byte]) else {
+            return FlagLookup::UnrecognizedShort(ch);
+        };
+
+        FlagLookup::Match(&self.info[index])
+    }
+
+    /// Look for a flag by its long name.
+    fn find_long(&self, str: &str) -> crate::flags::FlagLookup<'_> {
+        let Some(index) = self.map.find(str.as_bytes()) else {
+            return FlagLookup::UnrecognizedLong(str.to_string());
+        };
+        FlagLookup::Match(&self.info[index])
     }
 }
