@@ -14,6 +14,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "lexopt",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -47,6 +49,7 @@ dependencies = [
  "anyhow",
  "lexopt",
  "log",
+ "serde",
  "serde_json",
 ]
 
