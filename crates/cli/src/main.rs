@@ -1,10 +1,13 @@
 //! The main entry point for pokemon-term
 
-use std::process::ExitCode;
+use core::str;
+use std::{io::Read, process::ExitCode};
 
 mod args;
 mod flags;
 mod parse;
+
+mod util;
 
 mod help;
 mod version;
@@ -66,12 +69,57 @@ fn special(mode: crate::args::SpecialMode) -> anyhow::Result<ExitCode> {
     Ok(exit)
 }
 
+use serde::{Deserialize, Serialize};
+
+/// Struct that represent an single pokemon entity.
+///
+/// Represents their name , desc, index in pokedex, generation, availabel forms.
+/// This is parsed from json file that contains all the pokemon available
+#[derive(Debug, Deserialize, Serialize)]
+struct Pokemon<'a> {
+    idx: u32,
+    slug: &'a str,
+    r#gen: u8,
+    name: std::collections::HashMap<String, String>,
+    desc: std::collections::HashMap<String, String>,
+    forms: Vec<&'a str>,
+}
+
 /// Top level entry point for listing all pokemons
 ///
 /// This function parse the assets/pokemons.json to get the list of available pokemons available and prints
 /// the list to the terminal.
 fn list_pokemons(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
-    unimplemented!("Not Implemented")
+    use anyhow::Context;
+    use std::fs::File;
+
+    use util::write;
+
+    let exit_code = ExitCode::from(0);
+
+    let json_path = "assets/pokemon.json";
+
+    let mut result = String::new();
+    let _pokemon_json = File::open(json_path)
+        .with_context(|| format!("assets/pokemon.json not found.\nmake sure assets directory is present along side the binary.\n"))?
+        .read_to_string(&mut result)?;
+
+    let json_data: Vec<Pokemon> = serde_json::from_str(&result)?;
+
+    let mut list_output = String::new();
+
+    // TODO: format the list of pokemon in 3 columns for better readibility rather than as a single
+    // column
+    for (i, pokemon) in json_data.iter().enumerate() {
+        if i > 0 {
+            write(&mut list_output, "\n");
+        }
+        write(&mut list_output, pokemon.name.get("en").unwrap());
+    }
+
+    println!("{}", list_output);
+
+    Ok(exit_code)
 }
 
 /// Top level entry point for printing pokemon to the terminal
