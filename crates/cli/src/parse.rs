@@ -1,10 +1,7 @@
 use anyhow::Context;
 use std::ffi::OsString;
 
-use crate::{
-    args,
-    flags::{FlagInfo, FlagLookup},
-};
+use crate::{args, flags::FlagLookup};
 
 /// The result of parsing CLI arguments.
 ///

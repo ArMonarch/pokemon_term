@@ -146,7 +146,7 @@ pub enum FlagLookup<'a> {
 /// The order of these flags matter. It determines the order of the flags in
 /// the generated documentation (`-h`, `--help` and the man page) within each
 /// category. (This is why the deprecated flags are last.)
-pub(crate) const FLAGS: &[&dyn Flag] = &[&List];
+pub(crate) const FLAGS: &[&dyn Flag] = &[&Name, &List];
 
 /// A trait that encapsulates the definition of an optional flag for pokemon-term
 ///
@@ -216,6 +216,54 @@ pub(crate) trait Flag: Debug + Send + Sync + 'static {
 /// -n | --name
 #[derive(Debug)]
 struct Name;
+
+impl Flag for Name {
+    fn is_switch(&self) -> bool {
+        false
+    }
+
+    fn _is_multivalued(&self) -> bool {
+        false
+    }
+
+    fn name_short(&self) -> Option<u8> {
+        Some(b'n')
+    }
+
+    fn name_long(&self) -> &'static str {
+        "name"
+    }
+
+    fn name_negated(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn _doc_variable(&self) -> Option<&'static str> {
+        Some("NAME")
+    }
+
+    fn _doc_short(&self) -> &'static str {
+        "Print the Pokemon by its Name. Generally spelled like in the game."
+    }
+
+    fn _doc_long(&self) -> &'static str {
+        ""
+    }
+
+    fn update(&self, val: FlagValue<OsString>, args: &mut crate::args::Args) -> anyhow::Result<()> {
+        let name = match val.unwrap_value().into_string() {
+            Ok(str) => str,
+            Err(os_str) => anyhow::bail!(
+                "failed to parse value {:?}, for flag \"-n\" | \"--name\"",
+                os_str
+            ),
+        };
+
+        args.pokemon_name = name;
+
+        Ok(())
+    }
+}
 
 /// -l | --list
 #[derive(Debug)]

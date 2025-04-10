@@ -36,8 +36,8 @@ impl Default for Args {
 pub enum Mode {
     List,
     Regular,
-    Random,
-    RandomByNames,
+    _Random,
+    _RandomByNames,
 }
 
 impl Mode {

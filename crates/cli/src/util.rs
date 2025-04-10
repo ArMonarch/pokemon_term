@@ -48,3 +48,24 @@ pub fn format_command_list_output(pokemons: &[Pokemon]) -> String {
 
     result
 }
+
+pub fn load_pokemon_sprite<'a>(
+    pokemon: &String,
+    _pokemon_form: &Option<String>,
+    shiny: bool,
+) -> anyhow::Result<Vec<u8>> {
+    use std::fs::File;
+
+    let pokemon_sprit_file_path = if shiny {
+        format!("assets/colorscripts/shiny/{}", pokemon)
+    } else {
+        format!("assets/colorscripts/regular/{}", pokemon)
+    };
+
+    let mut buffer = Vec::new();
+    File::open(&pokemon_sprit_file_path)?
+        .read_to_end(&mut buffer)
+        .with_context(|| format!("file {} Not Found.", pokemon_sprit_file_path))?;
+
+    Ok(buffer)
+}

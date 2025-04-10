@@ -9,7 +9,7 @@ mod pokemon;
 
 mod util;
 use crate::util::format_command_list_output;
-use crate::util::load_pokemon_json;
+use crate::util::load_pokemon_sprite;
 
 mod help;
 mod version;
@@ -40,8 +40,8 @@ fn run(args: parse::ParseResult<args::Args>) -> anyhow::Result<ExitCode> {
     return match args.mode {
         Mode::List => list_pokemons(args),
         Mode::Regular => print_pokemon(args),
-        Mode::Random => print_random_pokemon(args),
-        Mode::RandomByNames => print_random_pokemon_by_name(args),
+        Mode::_Random => print_random_pokemon(args),
+        Mode::_RandomByNames => print_random_pokemon_by_name(args),
     };
 }
 
@@ -71,18 +71,18 @@ fn special(mode: crate::args::SpecialMode) -> anyhow::Result<ExitCode> {
     Ok(exit)
 }
 
+use crate::pokemon::Pokemons;
+
+/// type allias for Vec<Pokemon>, Because why not.
+
 /// Top level entry point for listing all pokemons
 ///
 /// This function parse the assets/pokemons.json to get the list of available pokemons available and prints
 /// the list to the terminal.
 fn list_pokemons(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
-    use crate::pokemon::Pokemon;
+    let poke = Pokemons::load_json()?;
 
-    type Pokemons = Vec<Pokemon>;
-
-    let pokemons: Pokemons = load_pokemon_json()?;
-
-    let list_output = format_command_list_output(&pokemons);
+    let list_output = format_command_list_output(&poke.pokemons());
 
     println!("{}", list_output);
 
@@ -91,8 +91,22 @@ fn list_pokemons(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
 }
 
 /// Top level entry point for printing pokemon to the terminal
-fn print_pokemon(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
-    unimplemented!("Not Implemented")
+fn print_pokemon(args: crate::args::Args) -> anyhow::Result<ExitCode> {
+    let poke = Pokemons::load_json()?;
+
+    let _pokemon = poke
+        .pokemons()
+        .iter()
+        .find(|p| p.slug == args.pokemon_name.to_lowercase())
+        .ok_or_else(|| anyhow::anyhow!("Invalid Pokemon name: {}", args.pokemon_name))?;
+
+    let pokemon_sprite = load_pokemon_sprite(&args.pokemon_name, &args.form, args.shiny)?;
+    let art = std::str::from_utf8(&pokemon_sprite)?;
+
+    println!("{}", art);
+
+    let exit_code = ExitCode::from(0);
+    Ok(exit_code)
 }
 
 /// Top level entry point for printing a random pokemon to the terminal
