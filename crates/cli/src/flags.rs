@@ -13,7 +13,7 @@ pub enum FlagValue<T> {
     /// A flag that comes with an arbitrary user value.
     Value(T),
     /// A flag that comes with an vec of arbitrary user value.
-    MultiValued(Vec<T>),
+    _MultiValued(Vec<T>),
 }
 
 impl<T> FlagValue<T> {
@@ -29,7 +29,7 @@ impl<T> FlagValue<T> {
         match self {
             FlagValue::Switch(bool) => bool,
             FlagValue::Value(_) => unreachable!("got flag value but expected switch"),
-            FlagValue::MultiValued(_) => unreachable!("got vec of flag value but expected switch"),
+            FlagValue::_MultiValued(_) => unreachable!("got vec of flag value but expected switch"),
         }
     }
 
@@ -45,7 +45,7 @@ impl<T> FlagValue<T> {
         match self {
             FlagValue::Value(val) => val,
             FlagValue::Switch(_) => unreachable!("got switch but expected flag value"),
-            FlagValue::MultiValued(_) => {
+            FlagValue::_MultiValued(_) => {
                 unreachable!("got vec of flag values but expected an flag value")
             }
         }
@@ -59,9 +59,9 @@ impl<T> FlagValue<T> {
     /// namely, caller usually know whether a switch, val, vec is expected.
     /// If the flag is something different, then it indicates a bug, and thus a panic is
     /// acceptable.
-    fn unwrap_vec(self) -> Vec<T> {
+    fn _unwrap_vec(self) -> Vec<T> {
         match self {
-            FlagValue::MultiValued(vec) => vec,
+            FlagValue::_MultiValued(vec) => vec,
             FlagValue::Switch(_) => unreachable!("got switch but expected vec of flag value"),
             FlagValue::Value(_) => unreachable!("get flag of value but expected flag value"),
         }
@@ -78,7 +78,7 @@ pub(crate) enum FlagInfoKind {
     Negated,
 
     /// A alias for standard flag, e.g.,
-    Alias,
+    _Alias,
 }
 
 /// The info about a flag associated with a flag's ID in the flag map.
@@ -163,7 +163,7 @@ pub(crate) trait Flag: Debug + Send + Sync + 'static {
 
     /// Returns true if this flag is multivalued. When a flag is a multivalued, the
     /// CLI parser will look for multiple value after the flag is seen.
-    fn is_multivalued(&self) -> bool;
+    fn _is_multivalued(&self) -> bool;
 
     /// A short single byte name for this flag. This return `None` by defult, which signifies that
     /// the flag has no short name.
@@ -191,17 +191,17 @@ pub(crate) trait Flag: Debug + Send + Sync + 'static {
     /// The convention is to capitalize variable names.
     ///
     /// By default this return None.
-    fn doc_variable(&self) -> Option<&'static str>;
+    fn _doc_variable(&self) -> Option<&'static str>;
 
     /// A (very) short documentation string describing what this flag does.
     ///
     /// This may sacrifice "Proper English" in order to be as terse as possible. Generally ensure
     /// that `pokemon-term -h` doesn't have lines that exceed 99 columns.
-    fn doc_short(&self) -> &'static str;
+    fn _doc_short(&self) -> &'static str;
 
     /// A (possibly very) longer documentation string describing in full detail what this flag
     /// does. This should be in mandoc/mdoc format.
-    fn doc_long(&self) -> &'static str;
+    fn _doc_long(&self) -> &'static str;
 
     /// Given the parsed value (which might just be a switch), this should update the state in
     /// `args` based on the value given for this flag.
@@ -226,7 +226,7 @@ impl Flag for List {
         true
     }
 
-    fn is_multivalued(&self) -> bool {
+    fn _is_multivalued(&self) -> bool {
         false
     }
 
@@ -242,15 +242,15 @@ impl Flag for List {
         None
     }
 
-    fn doc_variable(&self) -> Option<&'static str> {
+    fn _doc_variable(&self) -> Option<&'static str> {
         None
     }
 
-    fn doc_short(&self) -> &'static str {
+    fn _doc_short(&self) -> &'static str {
         "Print a list of all pokemons"
     }
 
-    fn doc_long(&self) -> &'static str {
+    fn _doc_long(&self) -> &'static str {
         ""
     }
 
@@ -266,22 +266,22 @@ impl Flag for List {
 
 /// -r | --random
 #[derive(Debug)]
-struct Random;
+struct _Random;
 
 /// -rn | --random-by-names
 #[derive(Debug)]
-struct RandomByNames;
+struct _RandomByNames;
 
 /// -s | --shiny
 #[derive(Debug)]
-struct Shiny;
+struct _Shiny;
 
 use crate::args::Args;
 use crate::parse::ParseResult;
 
 pub fn parse() -> ParseResult<Args> {
     let parser = crate::parse::Parser::new();
-    let mut args = crate::args::Args::new();
+    let mut args = crate::args::Args::default();
 
     if let Err(err) = parser.parse(std::env::args().skip(1), &mut args) {
         return ParseResult::Err(err);
