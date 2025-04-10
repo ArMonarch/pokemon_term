@@ -6,15 +6,19 @@ pub struct Args {
     pub positional: Vec<String>,
     // Everything Else, Sorted lexicographically.
     pub pokemon_name: String,
+    pub form: Option<String>,
+    pub shiny: bool,
 }
 
-impl Args {
-    pub fn new() -> Args {
+impl Default for Args {
+    fn default() -> Self {
         Args {
             special: None,
             mode: Mode::Regular,
             positional: Vec::new(),
             pokemon_name: String::new(),
+            form: None,
+            shiny: false,
         }
     }
 }
