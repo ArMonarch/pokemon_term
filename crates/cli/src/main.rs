@@ -79,10 +79,10 @@ use crate::pokemon::Pokemons;
 ///
 /// This function parse the assets/pokemons.json to get the list of available pokemons available and prints
 /// the list to the terminal.
-fn list_pokemons(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
+fn list_pokemons(args: crate::args::Args) -> anyhow::Result<ExitCode> {
     let poke = Pokemons::load_json()?;
 
-    let list_output = format_command_list_output(&poke.get_all());
+    let list_output = format_command_list_output(poke.get_all(), &args);
 
     println!("{}", list_output);
 

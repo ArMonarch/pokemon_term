@@ -8,6 +8,7 @@ pub struct Args {
     pub pokemon_name: String,
     pub form: Option<String>,
     pub shiny: bool,
+    pub list_with_forms: bool,
 }
 
 impl Default for Args {
@@ -19,6 +20,7 @@ impl Default for Args {
             pokemon_name: String::new(),
             form: None,
             shiny: false,
+            list_with_forms: false,
         }
     }
 }

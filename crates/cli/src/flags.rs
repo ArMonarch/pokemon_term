@@ -146,7 +146,7 @@ pub enum FlagLookup<'a> {
 /// The order of these flags matter. It determines the order of the flags in
 /// the generated documentation (`-h`, `--help` and the man page) within each
 /// category. (This is why the deprecated flags are last.)
-pub(crate) const FLAGS: &[&dyn Flag] = &[&Name, &List, &Shiny];
+pub(crate) const FLAGS: &[&dyn Flag] = &[&Name, &List, &ShowForms, &Shiny, &Form];
 
 /// A trait that encapsulates the definition of an optional flag for pokemon-term
 ///
@@ -313,7 +313,7 @@ impl Flag for Shiny {
     }
 
     fn _doc_short(&self) -> &'static str {
-        "Print the shiny version of the pokemons"
+        "Print the shiny version of the pokemon."
     }
 
     fn _doc_long(&self) -> &'static str {
@@ -326,6 +326,72 @@ impl Flag for Shiny {
         args: &mut crate::args::Args,
     ) -> anyhow::Result<()> {
         args.shiny = val.unwrap_switch();
+        Ok(())
+    }
+}
+
+/// -f | --form
+#[derive(Debug)]
+struct Form;
+
+impl Flag for Form {
+    fn is_switch(&self) -> bool {
+        false
+    }
+
+    fn _is_multivalued(&self) -> bool {
+        false
+    }
+
+    fn name_short(&self) -> Option<u8> {
+        Some(b'f')
+    }
+
+    fn name_long(&self) -> &'static str {
+        "form"
+    }
+
+    fn name_negated(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn _doc_variable(&self) -> Option<&'static str> {
+        Some("FORM")
+    }
+
+    fn _doc_short(&self) -> &'static str {
+        "Print the given form version of the pokemon."
+    }
+
+    fn _doc_long(&self) -> &'static str {
+        ""
+    }
+
+    fn update(
+        &self,
+        val: FlagValue<OsString, bool>,
+        args: &mut crate::args::Args,
+    ) -> anyhow::Result<()> {
+        let form = match val.unwrap_value().into_string() {
+            Ok(str) => str,
+            Err(os_str) => anyhow::bail!(
+                "failed to parse value {:?}, for flag \"-f\" | \"--form\"",
+                os_str
+            ),
+        };
+
+        // update pokemon form only if its already empty.
+        // else return err.
+        if !args.form.is_none() {
+            anyhow::bail!(
+                "tried to overwrite flag '-f' | '--form' '{}' <- '{}'.",
+                args.form.as_ref().unwrap(),
+                form
+            )
+        }
+
+        args.form = Some(form);
+
         Ok(())
     }
 }
@@ -377,6 +443,54 @@ impl Flag for List {
         assert!(val.unwrap_switch());
 
         args.mode.update(Mode::List);
+        Ok(())
+    }
+}
+
+/// --show-forms
+#[derive(Debug)]
+struct ShowForms;
+
+impl Flag for ShowForms {
+    fn is_switch(&self) -> bool {
+        true
+    }
+
+    fn _is_multivalued(&self) -> bool {
+        false
+    }
+
+    fn name_short(&self) -> Option<u8> {
+        None
+    }
+
+    fn name_long(&self) -> &'static str {
+        "show-forms"
+    }
+
+    fn name_negated(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn _doc_variable(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn _doc_short(&self) -> &'static str {
+        "Show List of Pokemons with their respective forms."
+    }
+
+    fn _doc_long(&self) -> &'static str {
+        ""
+    }
+
+    fn update(
+        &self,
+        val: FlagValue<OsString, bool>,
+        args: &mut crate::args::Args,
+    ) -> anyhow::Result<()> {
+        args.list_with_forms = val.unwrap_switch();
+
         Ok(())
     }
 }
