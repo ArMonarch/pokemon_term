@@ -9,7 +9,7 @@ mod pokemon;
 
 mod util;
 use crate::util::format_command_list_output;
-use crate::util::load_pokemon_sprite;
+use crate::util::load_pokemon_art;
 
 mod help;
 mod version;
@@ -82,7 +82,7 @@ use crate::pokemon::Pokemons;
 fn list_pokemons(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
     let poke = Pokemons::load_json()?;
 
-    let list_output = format_command_list_output(&poke.pokemons());
+    let list_output = format_command_list_output(&poke.get_all());
 
     println!("{}", list_output);
 
@@ -94,13 +94,16 @@ fn list_pokemons(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
 fn print_pokemon(args: crate::args::Args) -> anyhow::Result<ExitCode> {
     let poke = Pokemons::load_json()?;
 
-    let _pokemon = poke
-        .pokemons()
+    let pokemon = poke
+        .get_all()
         .iter()
-        .find(|p| p.slug == args.pokemon_name.to_lowercase())
+        .find(|p| p.name.get("en").unwrap().to_lowercase() == args.pokemon_name.to_lowercase())
         .ok_or_else(|| anyhow::anyhow!("Invalid Pokemon name: {}", args.pokemon_name))?;
 
-    let pokemon_sprite = load_pokemon_sprite(&args.pokemon_name, &args.form, args.shiny)?;
+    let art_path = pokemon.get_sprite_path(&args.form, args.shiny)?;
+
+    let pokemon_sprite = load_pokemon_art(&art_path)?;
+
     let art = std::str::from_utf8(&pokemon_sprite)?;
 
     println!("{}", art);

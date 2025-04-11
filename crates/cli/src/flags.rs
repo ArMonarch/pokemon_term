@@ -7,16 +7,16 @@ use std::fmt::Debug;
 /// 1. A switch (on or off),
 /// 2. an arbitary value,
 /// 3. Vec of arbitary value,
-pub enum FlagValue<T> {
+pub enum FlagValue<I, O> {
     /// A flag that is either on or off.
-    Switch(bool),
+    Switch(O),
     /// A flag that comes with an arbitrary user value.
-    Value(T),
+    Value(I),
     /// A flag that comes with an vec of arbitrary user value.
-    _MultiValued(Vec<T>),
+    _MultiValued(Vec<I>),
 }
 
-impl<T> FlagValue<T> {
+impl<I, O> FlagValue<I, O> {
     /// Returns the yes or no value of the switch.
     ///
     /// If this flag value is not switch, then this panics.
@@ -25,7 +25,7 @@ impl<T> FlagValue<T> {
     /// namely, caller usually know whether a switch, val, vec is expected.
     /// If the flag is something different, then it indicates a bug, and thus a panic is
     /// acceptable.
-    fn unwrap_switch(self) -> bool {
+    fn unwrap_switch(self) -> O {
         match self {
             FlagValue::Switch(bool) => bool,
             FlagValue::Value(_) => unreachable!("got flag value but expected switch"),
@@ -41,7 +41,7 @@ impl<T> FlagValue<T> {
     /// namely, caller usually know whether a switch, val, vec is expected.
     /// If the flag is something different, then it indicates a bug, and thus a panic is
     /// acceptable.
-    fn unwrap_value(self) -> T {
+    fn unwrap_value(self) -> I {
         match self {
             FlagValue::Value(val) => val,
             FlagValue::Switch(_) => unreachable!("got switch but expected flag value"),
@@ -59,7 +59,7 @@ impl<T> FlagValue<T> {
     /// namely, caller usually know whether a switch, val, vec is expected.
     /// If the flag is something different, then it indicates a bug, and thus a panic is
     /// acceptable.
-    fn _unwrap_vec(self) -> Vec<T> {
+    fn _unwrap_vec(self) -> Vec<I> {
         match self {
             FlagValue::_MultiValued(vec) => vec,
             FlagValue::Switch(_) => unreachable!("got switch but expected vec of flag value"),
@@ -146,7 +146,7 @@ pub enum FlagLookup<'a> {
 /// The order of these flags matter. It determines the order of the flags in
 /// the generated documentation (`-h`, `--help` and the man page) within each
 /// category. (This is why the deprecated flags are last.)
-pub(crate) const FLAGS: &[&dyn Flag] = &[&Name, &List];
+pub(crate) const FLAGS: &[&dyn Flag] = &[&Name, &List, &Shiny];
 
 /// A trait that encapsulates the definition of an optional flag for pokemon-term
 ///
@@ -210,7 +210,11 @@ pub(crate) trait Flag: Debug + Send + Sync + 'static {
     ///
     /// The `-V | --version` and `-h | --help` flags are treated as special in the parser and
     /// should nothing here.
-    fn update(&self, val: FlagValue<OsString>, args: &mut crate::args::Args) -> anyhow::Result<()>;
+    fn update(
+        &self,
+        val: FlagValue<OsString, bool>,
+        args: &mut crate::args::Args,
+    ) -> anyhow::Result<()>;
 }
 
 /// -n | --name
@@ -250,7 +254,11 @@ impl Flag for Name {
         ""
     }
 
-    fn update(&self, val: FlagValue<OsString>, args: &mut crate::args::Args) -> anyhow::Result<()> {
+    fn update(
+        &self,
+        val: FlagValue<OsString, bool>,
+        args: &mut crate::args::Args,
+    ) -> anyhow::Result<()> {
         let name = match val.unwrap_value().into_string() {
             Ok(str) => str,
             Err(os_str) => anyhow::bail!(
@@ -259,8 +267,65 @@ impl Flag for Name {
             ),
         };
 
+        // update pokemon name only if its already empty.
+        // else return err.
+        if !args.pokemon_name.is_empty() {
+            anyhow::bail!(
+                "tried to overwrite flag '-n' | '--name' '{}' <- '{}'.",
+                args.pokemon_name,
+                name
+            )
+        }
+
         args.pokemon_name = name;
 
+        Ok(())
+    }
+}
+
+/// -s | --shiny
+#[derive(Debug)]
+struct Shiny;
+
+impl Flag for Shiny {
+    fn is_switch(&self) -> bool {
+        true
+    }
+
+    fn _is_multivalued(&self) -> bool {
+        false
+    }
+
+    fn name_short(&self) -> Option<u8> {
+        Some(b's')
+    }
+
+    fn name_long(&self) -> &'static str {
+        "shiny"
+    }
+
+    fn name_negated(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn _doc_variable(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn _doc_short(&self) -> &'static str {
+        "Print the shiny version of the pokemons"
+    }
+
+    fn _doc_long(&self) -> &'static str {
+        ""
+    }
+
+    fn update(
+        &self,
+        val: FlagValue<OsString, bool>,
+        args: &mut crate::args::Args,
+    ) -> anyhow::Result<()> {
+        args.shiny = val.unwrap_switch();
         Ok(())
     }
 }
@@ -302,7 +367,11 @@ impl Flag for List {
         ""
     }
 
-    fn update(&self, val: FlagValue<OsString>, args: &mut crate::args::Args) -> anyhow::Result<()> {
+    fn update(
+        &self,
+        val: FlagValue<OsString, bool>,
+        args: &mut crate::args::Args,
+    ) -> anyhow::Result<()> {
         use crate::args::Mode;
 
         assert!(val.unwrap_switch());
@@ -319,10 +388,6 @@ struct _Random;
 /// -rn | --random-by-names
 #[derive(Debug)]
 struct _RandomByNames;
-
-/// -s | --shiny
-#[derive(Debug)]
-struct _Shiny;
 
 use crate::args::Args;
 use crate::parse::ParseResult;

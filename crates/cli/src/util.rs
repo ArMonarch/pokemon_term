@@ -9,21 +9,6 @@ pub fn write(string: &mut String, formatted_string: &str) {
     string.push_str(&formatted_string);
 }
 
-// function to load pokemon.json "assets/pokemon.json" as `Pokemon` struct with serde_json.
-pub fn load_pokemon_json<'a>() -> anyhow::Result<Vec<Pokemon>> {
-    const POKEMON_JSON_PATH: &str = "assets/pokemon.json";
-
-    let mut buffer = String::new();
-
-    File::open(POKEMON_JSON_PATH)
-        .with_context(|| format!("assets/pokemon.json not found.\nmake sure assets directory is present along side the binary.\n"))?
-        .read_to_string(&mut buffer)?;
-
-    let pokemon: Vec<Pokemon> = serde_json::from_str(&buffer)?;
-
-    Ok(pokemon)
-}
-
 pub fn format_command_list_output(pokemons: &[Pokemon]) -> String {
     // Const that determine the no of pokemon name to be printed per line.
     const NO_OF_COLUMNS: u8 = 4;
@@ -66,6 +51,17 @@ pub fn load_pokemon_sprite<'a>(
     File::open(&pokemon_sprit_file_path)?
         .read_to_end(&mut buffer)
         .with_context(|| format!("file {} Not Found.", pokemon_sprit_file_path))?;
+
+    Ok(buffer)
+}
+
+pub fn load_pokemon_art(pokemon_art_path: &String) -> anyhow::Result<Vec<u8>> {
+    use std::fs::File;
+
+    let mut buffer = Vec::new();
+    File::open(pokemon_art_path)?
+        .read_to_end(&mut buffer)
+        .with_context(|| format!("file {} Not Found.", pokemon_art_path))?;
 
     Ok(buffer)
 }

@@ -16,6 +16,40 @@ pub struct Pokemon {
     forms: Vec<String>,
 }
 
+impl Pokemon {
+    pub fn get_sprite_path(&self, form: &Option<String>, shiny: bool) -> anyhow::Result<String> {
+        // when shiny is true, assert form must be None.
+        if shiny && form.is_some() {
+            return Err(anyhow::anyhow!(
+                "form value set to Some(\"{}\") when shiny set to True.",
+                form.as_deref().unwrap()
+            ));
+        }
+
+        Ok(format!(
+            "assets/colorscripts/{}/{}",
+            if shiny { "shiny" } else { "regular" },
+            self.get_form_slug(form)?
+        ))
+    }
+
+    fn get_form_slug(&self, form: &Option<String>) -> anyhow::Result<String> {
+        Ok(if let Some(form) = form {
+            format!(
+                "{}-{}",
+                self.slug,
+                if self.forms.contains(form) {
+                    form
+                } else {
+                    anyhow::bail!("Invalid form for {}", self.slug)
+                }
+            )
+        } else {
+            self.slug.clone()
+        })
+    }
+}
+
 /// Represents an Vec of `Pokemons` entity.
 #[derive(Debug)]
 pub struct Pokemons(Vec<Pokemon>);
@@ -37,7 +71,7 @@ impl<'a> Pokemons {
     }
 
     /// Returns a slice over all the `Pokemon` in the `Pokemons`.
-    pub fn pokemons(&'a self) -> &'a [Pokemon] {
+    pub fn get_all(&'a self) -> &'a [Pokemon] {
         &self.0
     }
 }

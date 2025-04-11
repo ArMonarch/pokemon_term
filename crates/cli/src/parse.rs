@@ -147,11 +147,11 @@ impl Parser {
             };
 
             let val = if mat.kind == FlagInfoKind::Negated {
-                FlagValue::Switch(false)
+                FlagValue::<OsString, bool>::Switch(false)
             } else if mat.flag.is_switch() {
-                FlagValue::Switch(true)
+                FlagValue::<OsString, bool>::Switch(true)
             } else {
-                FlagValue::Value(
+                FlagValue::<OsString, bool>::Value(
                     p.value()
                         .with_context(|| format!("missing value for flag {:?}", mat))?,
                 )
