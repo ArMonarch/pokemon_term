@@ -8,6 +8,8 @@ mod parse;
 mod pokemon;
 
 mod util;
+use rand::Rng;
+
 use crate::util::format_command_list_output;
 use crate::util::load_pokemon_art;
 
@@ -40,7 +42,7 @@ fn run(args: parse::ParseResult<args::Args>) -> anyhow::Result<ExitCode> {
     return match args.mode {
         Mode::List => list_pokemons(args),
         Mode::Regular => print_pokemon(args),
-        Mode::_Random => print_random_pokemon(args),
+        Mode::Random => print_random_pokemon(args),
         Mode::_RandomByNames => print_random_pokemon_by_name(args),
     };
 }
@@ -106,7 +108,7 @@ fn print_pokemon(args: crate::args::Args) -> anyhow::Result<ExitCode> {
 
     let art = std::str::from_utf8(&pokemon_sprite)?;
 
-    println!("{}", art);
+    print!("{}", art);
 
     let exit_code = ExitCode::from(0);
     Ok(exit_code)
@@ -114,7 +116,48 @@ fn print_pokemon(args: crate::args::Args) -> anyhow::Result<ExitCode> {
 
 /// Top level entry point for printing a random pokemon to the terminal
 fn print_random_pokemon(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
-    unimplemented!("Not Implemented")
+    use rand::rng;
+
+    let poke = Pokemons::load_json()?;
+
+    let rand = rng().random_range(0..poke.len());
+    let pokemon = poke.get_all().get(rand).unwrap();
+
+    static SHINY_PROBABILITY: f64 = 1.0 / 20.00;
+    static FORM_PROBABILITY: f64 = 1.0 / 50.00;
+
+    let show_shiny = rng().random_bool(SHINY_PROBABILITY);
+
+    // if show_shiny is true, set show_form to false.
+    let show_form: bool = if !show_shiny {
+        rng().random_bool(FORM_PROBABILITY)
+    } else {
+        false
+    };
+
+    // Get an random form for the pokemon if show_form is true OR pokemon.forms is not empty.
+    let form: Option<String> = if show_form & !pokemon.forms.is_empty() {
+        let total_forms = pokemon.forms.len();
+        let form = pokemon
+            .forms
+            .get(rng().random_range(0..total_forms))
+            .unwrap()
+            .clone();
+        Some(form)
+    } else {
+        None
+    };
+
+    let art_path = pokemon.get_sprite_path(&form, show_shiny)?;
+
+    let pokemon_sprite = load_pokemon_art(&art_path)?;
+
+    let art = std::str::from_utf8(&pokemon_sprite)?;
+
+    print!("{}", art);
+
+    let exit_code = ExitCode::from(0);
+    Ok(exit_code)
 }
 
 /// Top level entry point for printing random pokemon from the list of given pokemons to terminal

@@ -7,6 +7,7 @@ use std::fmt::Debug;
 /// 1. A switch (on or off),
 /// 2. an arbitary value,
 /// 3. Vec of arbitary value,
+#[derive(Debug)]
 pub enum FlagValue<I, O> {
     /// A flag that is either on or off.
     Switch(O),
@@ -146,7 +147,7 @@ pub enum FlagLookup<'a> {
 /// The order of these flags matter. It determines the order of the flags in
 /// the generated documentation (`-h`, `--help` and the man page) within each
 /// category. (This is why the deprecated flags are last.)
-pub(crate) const FLAGS: &[&dyn Flag] = &[&Name, &List, &ShowForms, &Shiny, &Form];
+pub(crate) const FLAGS: &[&dyn Flag] = &[&Name, &List, &ShowForms, &Shiny, &Form, &Random];
 
 /// A trait that encapsulates the definition of an optional flag for pokemon-term
 ///
@@ -497,7 +498,54 @@ impl Flag for ShowForms {
 
 /// -r | --random
 #[derive(Debug)]
-struct _Random;
+struct Random;
+
+impl Flag for Random {
+    fn is_switch(&self) -> bool {
+        true
+    }
+
+    fn _is_multivalued(&self) -> bool {
+        false
+    }
+
+    fn name_short(&self) -> Option<u8> {
+        Some(b'r')
+    }
+
+    fn name_long(&self) -> &'static str {
+        "random"
+    }
+
+    fn name_negated(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn _doc_short(&self) -> &'static str {
+        "Print a Random Pokemon in the terminal. Includes shiny version and their forms."
+    }
+
+    fn _doc_long(&self) -> &'static str {
+        ""
+    }
+
+    fn _doc_variable(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn update(
+        &self,
+        val: FlagValue<OsString, bool>,
+        args: &mut crate::args::Args,
+    ) -> anyhow::Result<()> {
+        use crate::args::Mode;
+
+        assert!(val.unwrap_switch());
+
+        args.mode.update(Mode::Random);
+        Ok(())
+    }
+}
 
 /// -rn | --random-by-names
 #[derive(Debug)]

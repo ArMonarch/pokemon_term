@@ -70,6 +70,11 @@ impl<'a> Pokemons {
         Ok(Pokemons(p))
     }
 
+    /// Returns the number of pokemons in the vector, also referred to as its length.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
     /// Returns a slice over all the `Pokemon` in the `Pokemons`.
     pub fn get_all(&'a self) -> &'a [Pokemon] {
         &self.0

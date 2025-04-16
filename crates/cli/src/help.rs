@@ -50,7 +50,7 @@ pub fn help_short() -> String {
     /// Const that represent template of for help short.
     const TEMPLATE_HELP_SHORT: &str = "CLI Description. todo!()
 
-Usage: todo!()
+Usage:
   poke -l | --list
   poke -n | --name (pokemon_name)
   poke -h | --help
@@ -83,5 +83,6 @@ Arguments:
 
 /// Generate long Documentation.
 pub fn help_long() -> String {
-    unimplemented!("Not Implemented")
+    // use help_short as placeholder for help long.
+    help_short()
 }
