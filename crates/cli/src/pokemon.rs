@@ -12,7 +12,7 @@ pub struct Pokemon {
     pub slug: String,
     r#gen: u8,
     pub name: std::collections::HashMap<String, String>,
-    desc: std::collections::HashMap<String, String>,
+    pub desc: std::collections::HashMap<String, String>,
     pub forms: Vec<String>,
 }
 

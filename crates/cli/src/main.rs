@@ -102,6 +102,12 @@ fn print_pokemon(args: crate::args::Args) -> anyhow::Result<ExitCode> {
         .find(|p| p.name.get("en").unwrap().to_lowercase() == args.pokemon_name.to_lowercase())
         .ok_or_else(|| anyhow::anyhow!("Invalid Pokemon name: {}", args.pokemon_name))?;
 
+    if !args.shiny {
+        println!("{}", pokemon.name.get("en").unwrap());
+    } else {
+        println!("{} (shiny)", pokemon.name.get("en").unwrap());
+    }
+
     let art_path = pokemon.get_sprite_path(&args.form, args.shiny)?;
 
     let pokemon_sprite = load_pokemon_art(&art_path)?;
@@ -123,8 +129,8 @@ fn print_random_pokemon(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
     let rand = rng().random_range(0..poke.len());
     let pokemon = poke.get_all().get(rand).unwrap();
 
-    static SHINY_PROBABILITY: f64 = 1.0 / 20.00;
-    static FORM_PROBABILITY: f64 = 1.0 / 50.00;
+    static SHINY_PROBABILITY: f64 = 1.0 / 50.00;
+    static FORM_PROBABILITY: f64 = 1.0 / 10.00;
 
     let show_shiny = rng().random_bool(SHINY_PROBABILITY);
 
@@ -147,6 +153,18 @@ fn print_random_pokemon(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
     } else {
         None
     };
+
+    // print the pokemon name.
+    if !show_shiny {
+        println!("{}", pokemon.name.get("en").unwrap());
+    } else {
+        println!("{} (shiny)", pokemon.name.get("en").unwrap());
+    }
+
+    // print the pokemon form if set.
+    if let Some(form) = &form {
+        println!("Form: {}", form);
+    }
 
     let art_path = pokemon.get_sprite_path(&form, show_shiny)?;
 
