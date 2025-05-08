@@ -43,7 +43,7 @@ fn run(args: parse::ParseResult<args::Args>) -> anyhow::Result<ExitCode> {
         Mode::List => list_pokemons(args),
         Mode::Regular => print_pokemon(args),
         Mode::Random => print_random_pokemon(args),
-        Mode::_RandomByNames => print_random_pokemon_by_name(args),
+        Mode::RandomByNames => print_random_pokemon_by_name(args),
     };
 }
 
@@ -121,7 +121,7 @@ fn print_pokemon(args: crate::args::Args) -> anyhow::Result<ExitCode> {
 }
 
 /// Top level entry point for printing a random pokemon to the terminal
-fn print_random_pokemon(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
+fn print_random_pokemon(args: crate::args::Args) -> anyhow::Result<ExitCode> {
     use rand::rng;
 
     let poke = Pokemons::load_json()?;
@@ -132,7 +132,7 @@ fn print_random_pokemon(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
     static SHINY_PROBABILITY: f64 = 1.0 / 50.00;
     static FORM_PROBABILITY: f64 = 1.0 / 10.00;
 
-    let show_shiny = rng().random_bool(SHINY_PROBABILITY);
+    let show_shiny = args.shiny || rng().random_bool(SHINY_PROBABILITY);
 
     // if show_shiny is true, set show_form to false.
     let show_form: bool = if !show_shiny {
@@ -141,7 +141,7 @@ fn print_random_pokemon(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
         false
     };
 
-    // Get an random form for the pokemon if show_form is true OR pokemon.forms is not empty.
+    // Get an random form for the pokemon if show_form is true AND pokemon.forms is not empty.
     let form: Option<String> = if show_form & !pokemon.forms.is_empty() {
         let total_forms = pokemon.forms.len();
         let form = pokemon
@@ -179,6 +179,73 @@ fn print_random_pokemon(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
 }
 
 /// Top level entry point for printing random pokemon from the list of given pokemons to terminal
-fn print_random_pokemon_by_name(_args: crate::args::Args) -> anyhow::Result<ExitCode> {
-    unimplemented!("Not Implemented")
+fn print_random_pokemon_by_name(args: crate::args::Args) -> anyhow::Result<ExitCode> {
+    use pokemon::Pokemon;
+    use rand::rng;
+    use rand::seq::IteratorRandom;
+
+    let pokes = args.pokemon_names_for_random;
+
+    // load pokemon.json
+    let poke = Pokemons::load_json()?;
+
+    // check every pokemon name in pokemon.json to rule out any invalid pokemon name.
+    //
+    // update the rand_pokemon list with the Pokemon that matches the name
+    let mut rand_pokemons = Vec::<&Pokemon>::new();
+    {
+        for rand_pokemon in pokes.iter() {
+            let mut found = false;
+
+            for pokemon in poke.get_all().iter() {
+                if pokemon.name.get("en").unwrap().to_ascii_lowercase()
+                    == rand_pokemon.to_ascii_lowercase()
+                {
+                    rand_pokemons.push(pokemon);
+                    found = true;
+                    break;
+                }
+            }
+
+            if !found {
+                return Err(anyhow::anyhow!("invalid Pokemon Name: {rand_pokemon}"));
+            }
+        }
+    }
+
+    let pokemon = rand_pokemons.iter().choose(&mut rand::rng()).unwrap();
+
+    static SHINY_PROBABILITY: f64 = 1.0 / 50.00;
+    static FORM_PROBABILITY: f64 = 1.0 / 10.00;
+
+    let show_shiny = args.shiny || rng().random_bool(SHINY_PROBABILITY);
+
+    // if show_shiny is true, set show_form to false.
+    let show_form: bool = if !show_shiny {
+        rng().random_bool(FORM_PROBABILITY)
+    } else {
+        false
+    };
+
+    // Get an random form for the pokemon if show_form is true AND pokemon.forms is not empty.
+    let form: Option<String> = if show_form & !pokemon.forms.is_empty() {
+        let total_forms = pokemon.forms.len();
+        let form = pokemon
+            .forms
+            .get(rng().random_range(0..total_forms))
+            .unwrap()
+            .clone();
+        Some(form)
+    } else {
+        None
+    };
+
+    let art_path = pokemon.get_sprite_path(&form, show_shiny)?;
+    let pokemon_sprite = load_pokemon_art(&art_path)?;
+    let art = std::str::from_utf8(&pokemon_sprite)?;
+
+    print!("{}", art);
+
+    let exit_code = ExitCode::from(0);
+    Ok(exit_code)
 }

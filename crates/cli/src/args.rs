@@ -9,6 +9,7 @@ pub struct Args {
     pub form: Option<String>,
     pub shiny: bool,
     pub list_with_forms: bool,
+    pub pokemon_names_for_random: Vec<String>,
 }
 
 impl Default for Args {
@@ -21,6 +22,7 @@ impl Default for Args {
             form: None,
             shiny: false,
             list_with_forms: false,
+            pokemon_names_for_random: Vec::new(),
         }
     }
 }
@@ -39,7 +41,7 @@ pub enum Mode {
     List,
     Regular,
     Random,
-    _RandomByNames,
+    RandomByNames,
 }
 
 impl Mode {

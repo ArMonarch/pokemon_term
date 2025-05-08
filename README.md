@@ -18,13 +18,15 @@ Usage:
   poke -v | --version
 
 Arguments:
-  -n, --name=NAME  Print the Pokemon by its Name. Generally spelled like in the game.
-  -l, --list       Print a list of all pokemons
-  --show-forms     Show List of Pokemons with their respective forms.
-  -s, --shiny      Print the shiny version of the pokemon.
-  -f, --form=FORM  Print the given form version of the pokemon.
-  -r, --random     Print a Random Pokemon in the terminal. Includes shiny version and their forms.
+  -n, --name=NAME                   Print the Pokemon by its Name. Generally spelled like in the game.
+  -l, --list                        Print a list of all pokemons
+  --show-forms                      Show List of Pokemons with their respective forms.
+  -s, --shiny                       Print the shiny version of the pokemon.
+  -f, --form=FORM                   Print the given form version of the pokemon.
+  -r, --random                      Print a Random Pokemon in the terminal. Includes shiny version and their forms.
+  --random-by-name=[Pokemon Names]  Print Random Pokemon from given Pokemon names. Pokemon names must be seperated by comma(',').
 ```
 
 ## Installation
+
 ------------------------------------------------------

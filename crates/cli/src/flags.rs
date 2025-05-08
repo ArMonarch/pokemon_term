@@ -145,9 +145,17 @@ pub enum FlagLookup<'a> {
 /// A list of all flags in pokemon-term via implementations of `Flag`.
 ///
 /// The order of these flags matter. It determines the order of the flags in
-/// the generated documentation (`-h`, `--help` and the man page) within each
-/// category. (This is why the deprecated flags are last.)
-pub(crate) const FLAGS: &[&dyn Flag] = &[&Name, &List, &ShowForms, &Shiny, &Form, &Random];
+/// the generated documentation (`-h`, `--help` and the man page).
+///(This is why the deprecated flags are last.)
+pub(crate) const FLAGS: &[&dyn Flag] = &[
+    &Name,
+    &List,
+    &ShowForms,
+    &Shiny,
+    &Form,
+    &Random,
+    &RandomByNames,
+];
 
 /// A trait that encapsulates the definition of an optional flag for pokemon-term
 ///
@@ -547,9 +555,71 @@ impl Flag for Random {
     }
 }
 
-/// -rn | --random-by-names
+/// --random-by-names
 #[derive(Debug)]
-struct _RandomByNames;
+struct RandomByNames;
+
+impl Flag for RandomByNames {
+    fn is_switch(&self) -> bool {
+        false
+    }
+
+    fn _is_multivalued(&self) -> bool {
+        false
+    }
+
+    fn name_short(&self) -> Option<u8> {
+        None
+    }
+
+    fn name_long(&self) -> &'static str {
+        "random-by-name"
+    }
+
+    fn name_negated(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn _doc_variable(&self) -> Option<&'static str> {
+        Some("[Pokemon Names]")
+    }
+
+    fn _doc_short(&self) -> &'static str {
+        "Print Random Pokemon from given Pokemon names. Pokemon names must be seperated by comma(',')."
+    }
+
+    fn _doc_long(&self) -> &'static str {
+        ""
+    }
+
+    fn update(
+        &self,
+        val: FlagValue<OsString, bool>,
+        args: &mut crate::args::Args,
+    ) -> anyhow::Result<()> {
+        let pokemon_names = match val.unwrap_value().into_string() {
+            Ok(str) => str,
+            Err(os_str) => anyhow::bail!(
+                "failed to parse value {:?}, for flag \"-f\" | \"--form\"",
+                os_str
+            ),
+        };
+
+        // pokemon names must not be empty
+        assert_eq!(false, pokemon_names.is_empty());
+
+        // update pokemon names for random pokemon.
+        args.pokemon_names_for_random = pokemon_names
+            .split(",")
+            .map(|str| str.to_string())
+            .collect();
+
+        // lastly, update the mode to random-by-name
+        args.mode.update(crate::args::Mode::RandomByNames);
+
+        Ok(())
+    }
+}
 
 use crate::args::Args;
 use crate::parse::ParseResult;

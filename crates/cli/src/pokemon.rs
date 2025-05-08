@@ -6,7 +6,7 @@ use std::{fs::File, io::Read};
 ///
 /// Represents their name , desc, index in pokedex, generation, availabel forms.
 /// This is parsed from json file that contains all the pokemon available
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, PartialEq)]
 pub struct Pokemon {
     idx: u32,
     pub slug: String,
