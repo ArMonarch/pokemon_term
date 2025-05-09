@@ -25,8 +25,15 @@ Arguments:
   -f, --form=FORM                   Print the given form version of the pokemon.
   -r, --random                      Print a Random Pokemon in the terminal. Includes shiny version and their forms.
   --random-by-name=[Pokemon Names]  Print Random Pokemon from given Pokemon names. Pokemon names must be seperated by comma(',').
+  --random-by-gen=Generation        Print Random Pokemon from given Generations. Generation value , 1-3(continious) 1,3,5(specific).
 ```
 
 ## Installation
 
 ------------------------------------------------------
+
+## Similar projects
+- [Krabby]()
+- [pokemon-colorscripts](https://gitlab.com/phoneybadger/pokemon-colorscripts)
+- [pokeget](https://github.com/talwat/pokeget)
+- [pokeshell](https://github.com/acxz/pokeshell)

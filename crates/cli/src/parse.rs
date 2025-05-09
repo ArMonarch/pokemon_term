@@ -152,14 +152,11 @@ impl Parser {
                 FlagValue::<OsString, bool>::Switch(true)
             } else {
                 FlagValue::<OsString, bool>::Value(
-                    p.value()
-                        .with_context(|| format!("missing value for flag {:?}", mat))?,
+                    p.value().with_context(|| format!("flag value missing"))?,
                 )
             };
 
-            mat.flag
-                .update(val, args)
-                .with_context(|| format!("error parsing flag {:?}", mat))?;
+            mat.flag.update(val, args)?;
         }
 
         Ok(())

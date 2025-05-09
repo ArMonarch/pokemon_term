@@ -10,7 +10,7 @@ use std::{fs::File, io::Read};
 pub struct Pokemon {
     idx: u32,
     pub slug: String,
-    r#gen: u8,
+    pub r#gen: u8,
     pub name: std::collections::HashMap<String, String>,
     pub desc: std::collections::HashMap<String, String>,
     pub forms: Vec<String>,

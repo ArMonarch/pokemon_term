@@ -1,6 +1,6 @@
+use anyhow::Context;
 use std::ffi::OsString;
 use std::fmt::Debug;
-
 /// Represents a value parsed from the command line.
 ///
 /// This doesn't include the corrsponding flag, but value come in one of three form:
@@ -155,6 +155,7 @@ pub(crate) const FLAGS: &[&dyn Flag] = &[
     &Form,
     &Random,
     &RandomByNames,
+    &RandomByGen,
 ];
 
 /// A trait that encapsulates the definition of an optional flag for pokemon-term
@@ -616,6 +617,91 @@ impl Flag for RandomByNames {
 
         // lastly, update the mode to random-by-name
         args.mode.update(crate::args::Mode::RandomByNames);
+
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+struct RandomByGen;
+
+impl Flag for RandomByGen {
+    fn is_switch(&self) -> bool {
+        false
+    }
+
+    fn _is_multivalued(&self) -> bool {
+        false
+    }
+
+    fn name_short(&self) -> Option<u8> {
+        None
+    }
+
+    fn name_long(&self) -> &'static str {
+        "random-by-gen"
+    }
+
+    fn name_negated(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn _doc_variable(&self) -> Option<&'static str> {
+        Some("Generation")
+    }
+
+    fn _doc_short(&self) -> &'static str {
+        "Print Random Pokemon from given Generations. Generation value , 1-3(continious) 1,3,5(specific)."
+    }
+
+    fn _doc_long(&self) -> &'static str {
+        "Print Random Pokemon from given Generations. Generation value , 1-3(continious) 1,3,5(specific)."
+    }
+
+    fn update(
+        &self,
+        val: FlagValue<OsString, bool>,
+        args: &mut crate::args::Args,
+    ) -> anyhow::Result<()> {
+        let gen_value = match val.unwrap_value().into_string() {
+            Ok(str) => str,
+            Err(os_str) => anyhow::bail!(
+                "failed to parse value {:?}, for flag \"--random-by-gen\"",
+                os_str
+            ),
+        };
+
+        args.mode.update(crate::args::Mode::RandomByGen);
+
+        // gen-value (i32-i32), must contain only 2 i32 seperated by "-" & each number value must be
+        // <= 9, as there are only 9 Generations of pokemons.
+        let gens: Vec<u8> = if let Some((start_range, end_range)) = gen_value.split_once("-") {
+            let start_range = start_range.parse::<u8>();
+            let end_range = end_range.parse::<u8>();
+
+            match (start_range, end_range) {
+                (Ok(s), Ok(e)) => (s..=e).collect(),
+                _ => anyhow::bail!(
+                    "Invalid value '{gen_value}' for [Generation], should be an integer, a comma-seperated list, or a range of integer between range 1 to 9"
+                ),
+            }
+        }
+        // gen-value (i32,...), must be seperated by ",", may contain multiple instance of i32,
+        else {
+            gen_value
+                .split(",")
+                .map(|val| val.parse::<u8>())
+                .collect::<Result<Vec<_>, _>>()
+                .context(format!("Invalid value '{gen_value}' for [Generation], should be an integer, a comma-seperated list, or a range of integer between range 1 to 9\n"))?
+        };
+
+        if gens.is_empty() || gens.iter().any(|g| !(1..=9).contains(g)) {
+            anyhow::bail!(
+                "Invalid value '{gen_value}' for [Generation], should be an integer, a comma-seperated list, or a range of integer between range 1 to 9"
+            )
+        }
+
+        args.gen_value = gens;
 
         Ok(())
     }
