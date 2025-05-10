@@ -33,7 +33,7 @@ Arguments:
 ------------------------------------------------------
 
 ## Similar projects
-- [Krabby]()
+- [Krabby](https://github.com/yannjor/krabby)
 - [pokemon-colorscripts](https://gitlab.com/phoneybadger/pokemon-colorscripts)
 - [pokeget](https://github.com/talwat/pokeget)
 - [pokeshell](https://github.com/acxz/pokeshell)
