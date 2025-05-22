@@ -21,6 +21,7 @@ Arguments:
   -n, --name=NAME                   Print the Pokemon by its Name. Generally spelled like in the game.
   -l, --list                        Print a list of all pokemons
   --show-forms                      Show List of Pokemons with their respective forms.
+  --no-title                        Do not display pokemon name | info.
   -s, --shiny                       Print the shiny version of the pokemon.
   -f, --form=FORM                   Print the given form version of the pokemon.
   -r, --random                      Print a Random Pokemon in the terminal. Includes shiny version and their forms.
@@ -29,8 +30,18 @@ Arguments:
 ```
 
 ## Installation
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/ArMonarch/pokemon_term
+   cd pokemon_term
+   ```
 
-------------------------------------------------------
+2. **Build the Project**:
+   ```bash
+   cargo build --release
+   ```
+   The binary will be at `target/release/poke`.
+
 
 ## Similar projects
 - [Krabby](https://github.com/yannjor/krabby)
