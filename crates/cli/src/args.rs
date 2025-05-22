@@ -9,6 +9,7 @@ pub struct Args {
     pub form: Option<String>,
     pub shiny: bool,
     pub list_with_forms: bool,
+    pub no_title: bool,
     pub pokemon_names_for_random: Vec<String>,
     pub gen_value: Vec<u8>,
 }
@@ -23,6 +24,7 @@ impl Default for Args {
             form: None,
             shiny: false,
             list_with_forms: false,
+            no_title: false,
             pokemon_names_for_random: Vec::new(),
             gen_value: Vec::new(),
         }

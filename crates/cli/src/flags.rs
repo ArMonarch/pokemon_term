@@ -151,6 +151,7 @@ pub(crate) const FLAGS: &[&dyn Flag] = &[
     &Name,
     &List,
     &ShowForms,
+    &NoTitle,
     &Shiny,
     &Form,
     &Random,
@@ -702,6 +703,53 @@ impl Flag for RandomByGen {
         }
 
         args.gen_value = gens;
+
+        Ok(())
+    }
+}
+
+#[derive(Debug)]
+struct NoTitle;
+
+impl Flag for NoTitle {
+    fn is_switch(&self) -> bool {
+        true
+    }
+
+    fn _is_multivalued(&self) -> bool {
+        false
+    }
+
+    fn name_short(&self) -> Option<u8> {
+        None
+    }
+
+    fn name_long(&self) -> &'static str {
+        "no-title"
+    }
+
+    fn name_negated(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn _doc_variable(&self) -> Option<&'static str> {
+        None
+    }
+
+    fn _doc_short(&self) -> &'static str {
+        "Do not display pokemon name | info."
+    }
+
+    fn _doc_long(&self) -> &'static str {
+        ""
+    }
+
+    fn update(
+        &self,
+        val: FlagValue<OsString, bool>,
+        args: &mut crate::args::Args,
+    ) -> anyhow::Result<()> {
+        args.no_title = val.unwrap_switch();
 
         Ok(())
     }
